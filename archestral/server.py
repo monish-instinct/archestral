@@ -32,6 +32,8 @@ log = logging.getLogger("archestral.server")
 WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 SERVICE_KEY: web.AppKey["ConductorService"] = web.AppKey("service")
 TICK_S = 1 / 60
+MAX_RECORDING_SAMPLES = 60 * 60 * 15   # 15 minutes at 60 Hz
+MAX_RECORDINGS = 30
 SAMPLE_BROADCAST_S = 1 / 30
 STATUS_INTERVAL_S = 1.0
 
@@ -72,6 +74,9 @@ class ConductorService:
         self.rlog = RateLimitedLog()
         self.last_error: str | None = None
         self.last_sample_wall: float | None = None
+        self._recording: list[list] | None = None
+        self._recording_source = ""
+        self.recordings_dir: Path | None = None
 
     def _new_analyzer(self) -> SessionAnalyzer:
         s = self.settings.data
@@ -169,7 +174,10 @@ class ConductorService:
     async def _ingest(self, samples: list[Sample]) -> None:
         self.last_sample_wall = time.monotonic()
         norm = self.analyzer.norm
+        rec = self._recording
         for s in samples:
+            if rec is not None and len(rec) < MAX_RECORDING_SAMPLES:
+                rec.append([round(s.t, 4), _num(s.x), _num(s.y), round(s.confidence, 3)])
             events = self.analyzer.push(s)
             if s.is_finite() and s.confidence >= self.analyzer.cfg.min_confidence:
                 # Raw points for display, plus the normalized point once calibrated.
@@ -182,6 +190,25 @@ class ConductorService:
                 norm = self.analyzer.norm
             if events:
                 await self.emit_events(events)
+
+    async def _stop_session(self) -> None:
+        a = self.analyzer
+        if a.state not in ("calibrating", "running", "paused"):
+            return
+        await self.emit_events(a.stop())
+        m = a.summary()
+        log.info("session summary: source=%s duration=%.1fs beats=%d bpm=%s target=%s timing_err_ms=%s "
+                 "similarity=%s gaps=%d rejected=%d suppressed=%d", self._recording_source or "?",
+                 m["session_duration_s"], m["beat_count"], m["estimated_bpm"], m["target_bpm"],
+                 m["beat_timing_error_ms"], m["similarity_mean"], m["invalid_intervals"],
+                 m["rejected_samples"], m["suppressed_beats"])
+        rec, self._recording = self._recording, None
+        if rec and self.recordings_dir is not None:
+            try:
+                path = save_recording(self.recordings_dir, rec, self._recording_source, a, m)
+                log.info("recording saved: %s (%d samples)", path, len(rec))
+            except OSError as e:
+                log.warning("could not save recording: %s", e)
 
     # ------------------------------------------------------------------ commands
     async def handle(self, ws: web.WebSocketResponse, raw: str) -> None:
@@ -207,8 +234,7 @@ class ConductorService:
         a = self.analyzer
         log.info("command %s", cmd)
         if name == "set_source" and cmd["source"] == "none":
-            if a.state in ("calibrating", "running", "paused"):
-                await self.emit_events(a.stop())
+            await self._stop_session()
             self._set_source(None)
         elif name == "set_source":
             try:
@@ -216,8 +242,7 @@ class ConductorService:
             except (FileNotFoundError, ValueError) as e:
                 await self.broadcast("error", {"code": "source_unavailable", "message": str(e)}, only={ws})
                 return
-            if a.state in ("calibrating", "running", "paused"):
-                await self.emit_events(a.stop())
+            await self._stop_session()
             self.analyzer = self._new_analyzer()
             self._set_source(src)
         elif name == "start":
@@ -233,13 +258,17 @@ class ConductorService:
                     await self.broadcast("status", self.status_payload())
                     return
             self.source.poll()  # drop samples produced before the session started
+            # Live sessions are recorded (wrist points only) for offline tuning.
+            live = not self.source.is_test_input and self.settings.data.get("record_sessions", True)
+            self._recording = [] if live else None
+            self._recording_source = self.source.kind
             await self.emit_events(a.start())
         elif name == "pause":
             await self.emit_events(a.pause())
         elif name == "resume":
             await self.emit_events(a.resume())
         elif name == "stop":
-            await self.emit_events(a.stop())
+            await self._stop_session()
         elif name == "calibrate":
             await self.emit_events(a.recalibrate())
         elif name == "set_target_bpm":
@@ -271,6 +300,27 @@ class ConductorService:
         return ExternalSource(kind)
 
 
+def _num(v: float) -> float | None:
+    return round(v, 5) if v == v and abs(v) != float("inf") else None
+
+
+def save_recording(directory: Path, rows: list, source: str, analyzer: SessionAnalyzer, summary: dict) -> Path:
+    """Write a live session in the fixture format (NOT synthetic) and keep only the newest files."""
+    directory.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    path = directory / f"{stamp}-{source}.json"
+    doc = {"schema_version": 1, "synthetic": False, "recorded_live": True, "source": source,
+           "name": f"Live {source} session {stamp}", "pattern": analyzer.pattern.id,
+           "target_bpm": analyzer.cfg.target_bpm, "coordinate_space": "normalized, x right, y up",
+           "summary": {k: summary[k] for k in ("beat_count", "estimated_bpm", "similarity_mean",
+                                                "invalid_intervals", "suppressed_beats")},
+           "samples": rows}
+    path.write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
+    for old in sorted(directory.glob("*.json"))[:-MAX_RECORDINGS]:
+        old.unlink()
+    return path
+
+
 # ---------------------------------------------------------------------- HTTP
 def _json_error(status: int, message: str) -> web.Response:
     return web.json_response({"error": message}, status=status)
@@ -291,6 +341,7 @@ def create_app(data_dir: Path | None = None) -> web.Application:
     library = load_library()
     store = ArrangementStore(data_dir / "arrangements", library)
     service = ConductorService(settings)
+    service.recordings_dir = data_dir / "recordings"
     app = web.Application(client_max_size=512 * 1024)
     app[SERVICE_KEY] = service
 

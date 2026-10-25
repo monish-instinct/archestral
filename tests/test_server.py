@@ -76,6 +76,7 @@ def test_websocket_recorded_session_produces_beats_and_feedback(tmp_path):
             await ws.send_str(json.dumps({"v": 1, "type": "command", "name": "stop"}))
             summary, _ = await _recv_until(ws, lambda m: m["type"] == "summary")
             assert summary["beat_count"] >= 3
+            assert not (tmp_path / "recordings").exists()     # test input is never recorded
             await ws.send_str("garbage")
             err, _ = await _recv_until(ws, lambda m: m["type"] == "error")
             assert err["code"] == "bad_json"
@@ -106,6 +107,13 @@ def test_websocket_mouse_samples_feed_same_analyzer(tmp_path):
             assert summary["beat_count"] >= 8
             assert summary["estimated_bpm"] == pytest.approx(100, rel=0.05)
             await ws.close()
+            # live (non-test) sessions are recorded in the fixture format for offline tuning
+            recs = list((tmp_path / "recordings").glob("*-mouse.json"))
+            assert len(recs) == 1
+            doc = json.loads(recs[0].read_text())
+            assert doc["synthetic"] is False and doc["recorded_live"] is True
+            assert len(doc["samples"]) == len(rows)
+            assert doc["summary"]["beat_count"] == summary["beat_count"]
         finally:
             await c.close()
     asyncio.run(run())

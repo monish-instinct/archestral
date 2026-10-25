@@ -3,13 +3,15 @@
 A conducting beat is the *ictus*: the hand falls into a point, slows sharply
 and rebounds upward. A candidate at index i is accepted only when ALL hold:
 
-  1. speed[i] is a local minimum of the speed curve;
-  2. the peak speed in the preceding approach window is >= min_approach_speed
-     (a real stroke, not idle drift);
+  1. speed[i] is a local minimum of the (lightly smoothed) speed curve;
+  2. the peak speed in the preceding approach window is >= the larger of
+     ``min_approach_speed`` and ``adaptive_ratio`` x the 90th-percentile speed of
+     the segment (a real stroke for *this* user, not tracking jitter);
   3. speed[i] <= dip_ratio * that approach peak (a clear deceleration);
-  4. mean vertical velocity before i is downward and after i is upward
-     (direction reversal; this rejects the apex of the rebound, which is also
-     a speed minimum but reverses from up to down);
+  4. the hand rebounds upward: vertical velocity after i is positive and has
+     risen by at least ``vertical_ratio`` x the approach peak. This rejects the
+     apex of the rebound (also a speed minimum, but turning from up to down)
+     while still accepting the flatter sideways beats 2 and 3;
   5. it is at least 60/max_bpm seconds after the previously accepted beat
      (stronger candidate wins inside the refractory window).
 
@@ -53,8 +55,12 @@ def detect_beats(t: np.ndarray, xy: np.ndarray, cfg: AnalysisConfig, t_min: floa
         return []
     v = _velocity(t, xy)
     speed = np.linalg.norm(v, axis=1)
+    k = int(round(cfg.speed_smoothing_s / dt))
+    if k >= 2:   # moving average: suppresses jitter dips without moving real ictus points much
+        speed = np.convolve(np.pad(speed, (k // 2, k - 1 - k // 2), mode="edge"), np.ones(k) / k, mode="valid")
     w = max(2, int(round(cfg.window_s / dt)))
     wa = max(w, int(round(cfg.approach_window_s / dt)))
+    min_approach = max(cfg.min_approach_speed, cfg.adaptive_ratio * float(np.percentile(speed, 90)))
 
     raw: list[BeatCandidate] = []
     last_beat_idx = 0
@@ -62,13 +68,13 @@ def detect_beats(t: np.ndarray, xy: np.ndarray, cfg: AnalysisConfig, t_min: floa
         if not (speed[i] <= speed[i - 1] and speed[i] <= speed[i + 1]):
             continue
         approach = float(np.max(speed[max(0, i - wa):i]))
-        if approach < cfg.min_approach_speed:
+        if approach < min_approach:
             continue
         if speed[i] > cfg.dip_ratio * approach:
             continue
         vy_before = float(np.mean(v[i - w:i, 1]))
         vy_after = float(np.mean(v[i + 1:i + 1 + w, 1]))
-        if not (vy_before < 0.0 < vy_after):
+        if not (vy_after > 0.0 and vy_after - vy_before >= cfg.vertical_ratio * approach):
             continue
         top = float(np.max(xy[last_beat_idx:i + 1, 1]))
         raw.append(BeatCandidate(float(t[i]), i, float(xy[i, 0]), float(xy[i, 1]),

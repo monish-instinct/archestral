@@ -91,9 +91,16 @@ export class ConductorMode {
     const bpm = $("#target-bpm");
     bpm.value = this.settings.target_bpm;
     const setBpm = (v) => {
-      const n = Math.max(20, Math.min(300, Math.round(Number(v))));
-      if (!Number.isFinite(n)) return;
+      const n = Math.round(Number(v));
+      // Empty or out-of-range input is rejected (not clamped) so a half-typed value
+      // never silently becomes 20 or 300 BPM.
+      if (String(v).trim() === "" || !Number.isFinite(n) || n < 20 || n > 300) {
+        bpm.value = this.settings.target_bpm;
+        toast("Target tempo must be between 20 and 300 BPM.", "warn");
+        return;
+      }
       bpm.value = n;
+      if (n === this.settings.target_bpm) return;
       link.command("set_target_bpm", { bpm: n });
       this.settings.target_bpm = n;
     };
@@ -196,6 +203,10 @@ export class ConductorMode {
   }
 
   async start() {
+    if (this.input === "webxr" && !this.xr.session) {
+      toast("VR input needs a headset: press \u201cEnter VR conducting\u201d first. On a laptop use Webcam or Mouse.", "warn", 6000);
+      return;
+    }
     await this.engine.ensure();
     if (this.engine.state !== "running") toast("Audio is not available; visual feedback still works.", "warn");
     this.trail = [];
@@ -416,6 +427,7 @@ export class ConductorMode {
     const active = ["running", "calibrating"].includes(this.sessionState);
     if (active && inp && inp.state === "lost") add("warn", inp.source === "mouse" ? "No movement: press and drag in the pad." : "Tracking lost: keep your hand inside the camera view.");
     if (active && f && f.insufficient_movement) add("warn", "Movement too small. Use larger, clearer beat gestures.");
+    else if (active && f && f.small_movement && inp && inp.source === "webcam") add("warn", "Your gestures fill only a small part of the camera view, so detection is less reliable. Move closer (about an arm\u2019s length) or conduct bigger, then press Recalibrate.");
     if (this.sessionState === "calibrating") add("info", "Calibration required: conduct steadily for a couple of seconds.");
     if (this.sessionState === "running" && f && f.estimated_bpm === null) add("info", "No reliable tempo yet: at least four evenly spaced beats are needed.");
     if (this.engine.state === "unavailable") add("bad", `Audio unavailable: ${escape(this.engine.error || "")}`);
@@ -428,7 +440,7 @@ export class ConductorMode {
     if (s === "idle" || s === "stopped") {
       const how = { webcam: "Raise one hand in front of the camera.", mouse: "Press and drag in this pad.",
         recorded: "Replays a synthetic test trajectory.", webxr: "Use the VR controller." }[this.input];
-      return `<div class="big">Press Start to conduct</div><div class="sub">${how} Draw a 4/4 pattern: down, left, right, up.</div>`;
+      return `<div class="big">Press Start to conduct</div><div class="sub">${how} Conduct 4/4: down, left, right, up, with a small bounce on every beat.</div>`;
     }
     if (s === "paused") return `<div class="big">Paused</div>`;
     if (s === "calibrating") {

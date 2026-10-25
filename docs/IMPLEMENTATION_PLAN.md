@@ -25,7 +25,9 @@ TD-1. Available: Python 3.11–3.13, Node 22, .NET 8/9, and a FaceTime HD camera
 | | Streaming session state machine, calibration, insufficient-movement detection | Implemented · Auto-tested |
 | Inputs | Recorded synthetic fixtures (7 cases), labelled as test input | Implemented · Auto-tested · Browser-verified |
 | | Mouse / trackpad conducting pad | Implemented · Auto-tested (WebSocket) · Browser-verified (synthetic pointer events) |
-| | Webcam: MediaPipe Hands, wrist/index tip, preview, loss, reacquire, cleanup | Implemented · **Partially verified**: the unavailable/permission path was observed; live hand tracking was not run, because the camera permission prompt needs the user |
+| | Webcam: MediaPipe Hands, wrist/index tip, preview, loss, reacquire, cleanup | Implemented · **User-run on the dev Mac**: permission prompt, camera start and MediaPipe confirmed in the service log; detection accuracy on real hands not yet measured |
+| | Live session recording for tuning (`data/recordings`) | Implemented · Auto-tested |
+| | Robustness tuning (speed smoothing, adaptive threshold, rebound rule, tempo-aware refractory, bar-span tempo, small-movement warning) | Implemented · Auto-tested on webcam-like synthetic data (`tests/test_robustness.py`) |
 | | WebXR controller conducting + haptics | Implemented · **Not verified** (no headset) |
 | Service | WebSocket protocol v1 with validation | Implemented · Auto-tested |
 | | REST API (settings, patterns, fixtures, library, arrangements) | Implemented · Auto-tested |
@@ -44,8 +46,8 @@ TD-1. Available: Python 3.11–3.13, Node 22, .NET 8/9, and a FaceTime HD camera
 | ML | Learned classifier | **Not implemented** by design (no labelled real data); plan in ARCHITECTURE.md |
 
 ## Highest-priority remaining work
-1. Run a live webcam session after granting camera permission, and tune `min_approach_speed` /
-   `dip_ratio` on real recordings from several people.
+1. Collect a few live recordings (now saved automatically) from several people and check the
+   thresholds against them with `python -m archestral analyze`.
 2. Record real (non-synthetic) trajectories with annotated beats and add them as a second fixture set.
 3. Calibrate the similarity mapping against human ratings, or drop the 0–1 mapping in favour of raw distance bands.
 4. Replace the synthesized voices with licensed samples through the library `sample` slot.

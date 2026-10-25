@@ -55,6 +55,7 @@ class _Stats:
     tempo_history: list[tuple[float, float]] = field(default_factory=list)
     confidence_sum: float = 0.0
     confidence_n: int = 0
+    suppressed_beats: int = 0
 
 
 class SessionAnalyzer:
@@ -75,6 +76,7 @@ class SessionAnalyzer:
         self._buf: deque[tuple[float, float, float]] = deque()   # t, nx, ny (normalized, smoothed)
         self._recent_conf: deque[tuple[float, float]] = deque()
         self.beats: list[BeatEvent] = []
+        self._strengths: deque[float] = deque(maxlen=8)
         self._segment_beats: list[BeatEvent] = []
         self._last_valid_t: float | None = None
         self._prev_t: float | None = None
@@ -224,9 +226,19 @@ class SessionAnalyzer:
             t_min = max(t_min, self.beats[-1].t + self.cfg.min_beat_interval_s * 0.999)
         t_max = t[-1] - self.cfg.detection_lookahead_s
         events = []
+        tempo_now = self._tempo().bpm
         for c in detect_beats(tu, xyu, self.cfg, t_min=t_min, t_max=t_max):
             if self.beats and c.t - self.beats[-1].t < self.cfg.min_beat_interval_s:
                 continue
+            # Tempo-aware refractory: with a reliable tempo, a WEAK "beat" far sooner
+            # than the expected period is jitter or a double bounce. Strong early beats
+            # are kept, so a tempo that was underestimated can still recover.
+            if self.beats and tempo_now and self._strengths and \
+                    c.t - self.beats[-1].t < self.cfg.tempo_refractory_ratio * 60.0 / tempo_now and \
+                    c.strength < 0.6 * float(np.median(self._strengths)):
+                self.stats.suppressed_beats += 1
+                continue
+            self._strengths.append(c.strength)
             ev = BeatEvent(len(self.beats) + 1, c.t, None, self._confidence(), c.amplitude, c.x, c.y)
             self.beats.append(ev)
             self._segment_beats.append(ev)
@@ -274,7 +286,8 @@ class SessionAnalyzer:
 
     def _tempo(self):
         return estimate_tempo([b.t for b in self.beats], self.cfg.min_bpm, self.cfg.max_bpm,
-                              self.cfg.tempo_window, self.cfg.min_intervals_for_tempo)
+                              self.cfg.tempo_window, self.cfg.min_intervals_for_tempo,
+                              self.pattern.beats_per_bar)
 
     def tracking_state(self, t: float | None = None) -> str:
         if self._last_valid_t is None:
@@ -303,6 +316,8 @@ class SessionAnalyzer:
             "calibrated": self.norm is not None,
             "calibration_progress": round(calib_progress, 3),
             "insufficient_movement": self._insufficient,
+            # gestures that fill only a small part of the camera image: jitter dominates
+            "small_movement": self.norm is not None and self.norm.scale < self.cfg.small_movement_scale,
             "target_bpm": self.cfg.target_bpm,
             "estimated_bpm": None if tempo.bpm is None else round(tempo.bpm, 2),
             "tempo_status": tempo.status,
@@ -331,6 +346,7 @@ class SessionAnalyzer:
             **m,
             "similarity_mean": _round(float(np.mean(sims)) if sims else None, 3),
             "similarity_bars": len(sims),
+            "suppressed_beats": self.stats.suppressed_beats,
             "mean_tracking_confidence": _round(
                 self.stats.confidence_sum / self.stats.confidence_n if self.stats.confidence_n else None, 3),
             "rejected": {"timestamp": r.rejected_timestamp, "nonfinite": r.rejected_nonfinite,

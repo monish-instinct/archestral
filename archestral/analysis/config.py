@@ -26,6 +26,7 @@ class AnalysisConfig:
     # --- calibration ---
     calibration_s: float = 2.0           # movement collected before analysis starts
     min_movement_range: float = 0.04     # in raw input units (0..1 image space)
+    small_movement_scale: float = 0.07   # calibrated half-extent below this -> "move closer" hint
 
     # --- resampling ---
     resample_hz: float = 60.0
@@ -35,6 +36,9 @@ class AnalysisConfig:
     dip_ratio: float = 0.55              # speed at ictus must be <= ratio * approach peak
     window_s: float = 0.12               # pre/post window to measure direction reversal
     approach_window_s: float = 0.35      # how far back to look for the stroke's peak speed
+    speed_smoothing_s: float = 0.05      # moving-average window on the speed curve
+    adaptive_ratio: float = 0.2         # approach peak must reach this x the user's p90 stroke speed
+    vertical_ratio: float = 0.2          # required upward change in vertical velocity, x approach peak
     detection_lookahead_s: float = 0.15  # latency before a beat candidate is finalized
     min_bpm: float = 30.0
     max_bpm: float = 200.0
@@ -42,6 +46,7 @@ class AnalysisConfig:
     # --- tempo ---
     tempo_window: int = 8                # rolling number of intervals
     min_intervals_for_tempo: int = 3
+    tempo_refractory_ratio: float = 0.6  # once tempo is known, ignore beats sooner than this x period
 
     # --- similarity ---
     dtw_points: int = 64
@@ -75,16 +80,21 @@ _BOUNDS: dict[str, tuple[float, float]] = {
     "smoothing_d_cutoff_hz": (0.1, 30.0),
     "calibration_s": (0.5, 10.0),
     "min_movement_range": (0.001, 0.5),
+    "small_movement_scale": (0.0, 0.5),
     "resample_hz": (20.0, 240.0),
     "min_approach_speed": (0.05, 20.0),
     "dip_ratio": (0.05, 0.95),
     "window_s": (0.03, 0.5),
     "approach_window_s": (0.05, 1.5),
+    "speed_smoothing_s": (0.0, 0.3),
+    "adaptive_ratio": (0.0, 0.9),
+    "vertical_ratio": (0.0, 2.0),
     "detection_lookahead_s": (0.05, 0.6),
     "min_bpm": (20.0, 120.0),
     "max_bpm": (60.0, 300.0),
     "tempo_window": (2, 64),
     "min_intervals_for_tempo": (1, 32),
+    "tempo_refractory_ratio": (0.0, 0.9),
     "dtw_points": (8, 512),
     "dtw_band": (0.0, 1.0),
     "similarity_scale": (0.01, 10.0),

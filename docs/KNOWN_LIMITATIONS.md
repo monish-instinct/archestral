@@ -1,9 +1,12 @@
 # Known Limitations
 
-1. **Live webcam tracking has not been run end to end on this machine.** The camera-permission
-   path was observed (the app reports "Camera unavailable" with instructions). Detection thresholds
-   were tuned on synthetic trajectories and may need adjusting for real hands
-   (Settings → Analysis: *Beat: min stroke speed*, *Beat: deceleration ratio*).
+1. **Beat-detection thresholds are tuned on synthetic webcam-like data, not yet on real recordings.**
+   The webcam itself works on the dev Mac (the camera opened after permission was granted, and MediaPipe ran).
+   Live sessions are now saved to `data/recordings/`, so the thresholds can be checked against real movement
+   with `python -m archestral analyze data/recordings/<file>.json`.
+   Remaining weak spots in simulation: sideways beats with almost no bounce are missed about 15% of the time,
+   and a small, far-away hand at slow tempos (≈60 BPM) can give an unstable tempo. The app warns about the
+   second case ("move closer or conduct bigger").
 2. **Beat-reactive sound lags the gesture** by about 150–250 ms (detection lookahead + WebSocket +
    audio output). This is a reactive design, not predictive or sample-accurate synchronisation.
 3. **The gesture-similarity estimate is uncalibrated.** `exp(-d/0.35)` was chosen by hand; it is not

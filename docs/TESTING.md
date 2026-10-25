@@ -12,7 +12,7 @@ for f in $(find web/js -name '*.js'); do node --check "$f"; done   # JS syntax c
 
 ## Results on the development machine (macOS 26.0.1, Apple M2, Python 3.12.4, Node 22.23)
 
-- `pytest`: **87 passed** (about 13 s)
+- `pytest`: **98 passed** (about 22 s)
 - `node --test`: **12 passed**
 - `node --check` on all client modules: no errors
 
@@ -25,6 +25,7 @@ for f in $(find web/js -name '*.js'); do node --check "$f"; done   # JS syntax c
 | `tests/test_session.py` | fixtures are synthetic and deterministic; deterministic analysis; tempo recovered for reference/faster/slower/noisy/missing/invalid fixtures; beat-in-bar ordering; incomplete pattern → no tempo; invalid timestamps counted; gaps reported; similarity label; state machine with pause/resume; insufficient movement; tracking loss; rate-limited feedback |
 | `tests/test_protocol_storage.py` | encode envelope, envelope cannot be overridden, NaN never emitted, decode valid messages, 15 malformed-message cases, size limits; arrangement round trip, 8 validation failures, path traversal, invalid files fail safely; settings validation and corrupt-file recovery; recorded source timing |
 | `tests/test_server.py` | REST endpoints (including bad JSON and an unknown id); a WebSocket recorded session gives beats, ~120 BPM feedback, a test-input flag and a summary; garbage frames get an error reply; mouse samples over WebSocket reach the same analyzer (~100 BPM) |
+| `tests/test_robustness.py` | webcam-like synthetic input (30 fps, jitter, dropped frames, tempo drift, flatter sideways beats, sharp bounces): tempo within 6% and beat count within range at 60/90/120 BPM; far, jittery hand no longer doubles the tempo at 90/120 BPM; bar-span tempo cancels per-beat offsets and skips bars with a missed beat; small-movement flag |
 | `web/tests/core.test.mjs` | client protocol parse/reject/encode, mute/solo rules, inverse distance formula, azimuth sign, RMS dBFS, placement bounds and spacing, snapping and free-spot search, id slugs, A/B comparison, formatting never invents numbers |
 
 ## Test data

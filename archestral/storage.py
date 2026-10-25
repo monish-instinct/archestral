@@ -273,6 +273,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
               "reverb_mix": 0.25, "panning_model": "HRTF"},
     "ui": {"first_run_done": False, "show_preview": True},
     "log_level": "INFO",
+    "record_sessions": True,
 }
 
 
@@ -297,6 +298,7 @@ def validate_settings(data: Any) -> tuple[dict[str, Any], list[str]]:
     pick("pattern", lambda v: isinstance(v, str) and len(v) <= 32)
     pick("target_bpm", lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and 20 <= v <= 300)
     pick("log_level", lambda v: v in ("DEBUG", "INFO", "WARNING", "ERROR"))
+    pick("record_sessions", lambda v: isinstance(v, bool))
     if "analysis" in data:
         _, issues = config_from_dict(data["analysis"])
         if issues:

@@ -49,12 +49,18 @@ so the algorithm exists only once.
 6. **Gaps.** A gap longer than `gap_threshold_s` ends the segment: the buffer is cleared, nothing is
    interpolated across it, and an invalid interval is recorded.
 7. **Resampling.** Linear interpolation to 60 Hz inside the current segment.
-8. **Beat detection** (`beats.py`). A beat is a local speed minimum where the stroke peak in the last 0.35 s
-   is ≥ `min_approach_speed`, speed ≤ `dip_ratio` × peak, vertical velocity reverses from
-   down to up, and the minimum is outside the refractory window (60 / `max_bpm`). The down→up rule
-   rejects the apex of each rebound. A candidate is only finalized after a lookahead of
+8. **Beat detection** (`beats.py`). The speed curve is lightly smoothed (50 ms moving average). A beat is a
+   local speed minimum where the stroke peak in the last 0.35 s is ≥ max(`min_approach_speed`,
+   `adaptive_ratio` × the 90th-percentile speed of the segment), speed ≤ `dip_ratio` × peak, and the hand
+   rebounds upward: vertical velocity afterwards is positive and has risen by ≥ `vertical_ratio` × peak.
+   The rebound rule rejects the apex of each rebound but still accepts the flatter sideways beats 2 and 3.
+   A refractory window (60 / `max_bpm`) applies, and once a tempo is known, a *weak* candidate arriving
+   sooner than 0.6 × the period is discarded as jitter (`suppressed_beats`). A candidate is only finalized after a lookahead of
    `detection_lookahead_s` (150 ms), so beat events arrive about 150–250 ms after the physical ictus.
-9. **Tempo** (`tempo.py`). The median of the last `tempo_window` valid intervals; `BPM = 60 / T`. Intervals
+9. **Tempo** (`tempo.py`). `BPM = 60 / T`. T is the median of whole-bar spans (t[j] − t[j−B]) / B over
+   recent bars whose every interval is regular. Per-beat shape offsets cancel across a bar, and bars with a
+   missed or extra beat are skipped. If there are not yet two such bars, T is the median of the last
+   `tempo_window` valid intervals. Intervals
    outside [60/max_bpm, 60/min_bpm] are rejected. With fewer than 3 valid intervals the tempo is
    reported as unavailable (`null`).
 10. **Beat timing error.** The mean |offset| of recent beats from a grid at the target tempo whose
@@ -122,6 +128,7 @@ directBus (conductor clicks & chords, metronome) ─► master + reverb
 | Arrangements | `data/arrangements/<id>.json` | Schema v1, ids `[a-z0-9-]`, ≤ 48 instruments, ≤ 256 KB, validated against the library on save and load |
 | Patterns | `patterns/*.json` | Schema v1, validated; built-ins are the fallback |
 | Fixtures | `tests/fixtures/synthetic/*.json` | `"synthetic": true`, deterministic (seeded) |
+| Live recordings | `data/recordings/<time>-<source>.json` | Same format with `"synthetic": false, "recorded_live": true`; wrist points only, no images; newest 30 kept; toggle in Settings |
 
 `ARCHESTRAL_DATA_DIR` or `--data-dir` moves the data folder.
 

@@ -66,7 +66,7 @@ class ExternalSource(TrackingSource):
             raise ValueError(kind)
         self.kind = kind
         self.label = "Mouse / trackpad (manual input)" if kind == "mouse" else "WebXR controller"
-        self._q = BoundedSampleQueue()
+        self._q = BoundedSampleQueue(4096)   # client batches can arrive in bursts
         self._last_wall: float | None = None
         self._running = False
 

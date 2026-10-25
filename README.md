@@ -78,7 +78,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/PROTOCOL.md](docs/PRO
 node --test web/tests/*.test.mjs
 ```
 
-There are 87 Python tests (preprocessing, beats, tempo, DTW, patterns, the streaming session,
+There are 98 Python tests (preprocessing, beats, tempo, DTW, patterns, the streaming session,
 protocol, storage, and end-to-end HTTP/WebSocket) and 12 JavaScript tests (protocol parsing,
 mixer, stage rules, A/B comparison). See [docs/TESTING.md](docs/TESTING.md).
 
@@ -100,6 +100,7 @@ It should run anywhere MediaPipe 0.10.21 has wheels (macOS, Windows, Linux x86-6
 
 | Symptom | Fix |
 |---|---|
+| Beats missed or tempo jumps around | Stand about an arm's length from the camera, use big gestures with a small bounce on each beat, then press Recalibrate. Settings → Analysis has the beat thresholds |
 | "Camera unavailable" banner | Grant camera access to your terminal app (see above) and press Start again; or pick another camera index |
 | `./run.sh` says Python 3.10–3.12 is needed | `brew install python@3.12` (MediaPipe 0.10.21 has no Python 3.13 wheels) |
 | Port 8765 in use | `./run.sh --port 8800` |
