@@ -13,7 +13,7 @@ cd archestral
 python3.12 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python -m archestral diagnose            # checks numpy / aiohttp / OpenCV / MediaPipe
-.venv/bin/python -m pytest                         # 98 tests should pass
+.venv/bin/python -m pytest                         # 99 tests should pass
 .venv/bin/python -m archestral                     # starts http://127.0.0.1:8765 and opens the browser
 ```
 `./run.sh` does all of this automatically.

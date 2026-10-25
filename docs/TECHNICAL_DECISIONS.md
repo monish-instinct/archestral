@@ -38,8 +38,10 @@ fewer than 3 intervals the tempo is reported as unavailable rather than guessed.
 ### TD-7: Similarity is a labelled, uncalibrated prototype
 DTW distance is length-normalized and computed on shape-normalized bars, against every template
 rotation (so the bar can start on any beat; this also labels beat-in-bar). It is mapped with
-`exp(-d/0.35)`. The constant was chosen so the clean schematic pattern scores about 0.85–0.9 and a
-3/4 or 2/4 gesture against the 4/4 template scores about 0.15–0.2. It is **not** validated against
+`clip((d_random − d)/(d_random − d_perfect), 0, 1)` with measured anchors d_perfect = 0.03 (clean textbook bar)
+and d_random = 0.63 (median of smooth random hand motion). It replaced an earlier `exp(-d/0.35)` mapping, which gave
+random motion about 0.18, misleading partial credit that became visible on the first real webcam recordings.
+With the new anchors, a 3/4 or 2/4 gesture against the 4/4 template scores about 0.1. It is **not** validated against
 expert judgement, and the UI says so.
 
 ### TD-8: MediaPipe 0.10.21 pinned

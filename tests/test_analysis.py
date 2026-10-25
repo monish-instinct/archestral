@@ -177,17 +177,30 @@ def test_similarity_prefers_correct_pattern_and_finds_start_beat():
     t, xy = ideal_trajectory(P44, 90, 2, 60)
     # one bar starting on beat 2
     m = (t >= period) & (t <= period * 5)
-    good = gesture_similarity(xy[m], P44, cfg.dtw_points, cfg.dtw_band, cfg.similarity_scale)
+    good = gesture_similarity(xy[m], P44, cfg.dtw_points, cfg.dtw_band, cfg.similarity_d_perfect, cfg.similarity_d_random)
     assert good.status == "ok" and good.start_beat == 2
     assert good.estimate > 0.8
     t3, xy3 = ideal_trajectory(builtin_pattern("3-4"), 90, 2, 60)
-    wrong = gesture_similarity(xy3[t3 <= period * 4], P44, cfg.dtw_points, cfg.dtw_band, cfg.similarity_scale)
+    wrong = gesture_similarity(xy3[t3 <= period * 4], P44, cfg.dtw_points, cfg.dtw_band, cfg.similarity_d_perfect,
+                               cfg.similarity_d_random)
     assert wrong.estimate < good.estimate - 0.3
 
 
 def test_similarity_insufficient_or_invalid():
-    assert gesture_similarity(np.zeros((3, 2)), P44, 64, 0.25, 0.35).status == "insufficient_data"
+    assert gesture_similarity(np.zeros((3, 2)), P44, 64, 0.25).status == "insufficient_data"
     bad = np.full((20, 2), np.nan)
-    assert gesture_similarity(bad, P44, 64, 0.25, 0.35).status == "invalid"
-    assert math.isfinite(gesture_similarity(np.random.default_rng(1).normal(size=(30, 2)), P44, 64, 0.25,
-                                            0.35).normalized_distance)
+    assert gesture_similarity(bad, P44, 64, 0.25).status == "invalid"
+    assert math.isfinite(gesture_similarity(np.random.default_rng(1).normal(size=(30, 2)), P44, 64, 0.25).normalized_distance)
+
+
+def test_similarity_anchors_random_motion_near_zero():
+    """Smooth random hand motion must not earn partial credit."""
+    rng = np.random.default_rng(7)
+    ests = []
+    for _ in range(40):
+        w = rng.normal(size=(100, 2))
+        xy = np.column_stack([np.convolve(w[:, i], np.ones(8) / 8, "same") for i in range(2)])[20:80]
+        ests.append(gesture_similarity(xy, P44, 64, 0.25).estimate)
+    assert np.median(ests) < 0.15
+    t, xy = ideal_trajectory(P44, 90, 1, 60)
+    assert gesture_similarity(xy, P44, 64, 0.25).estimate > 0.9

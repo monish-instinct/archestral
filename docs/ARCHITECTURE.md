@@ -69,7 +69,8 @@ so the algorithm exists only once.
     reference template are each resampled to 64 points and shape-normalized (mean removed, divided
     by RMS radius). DTW (Euclidean, Sakoe-Chiba band 25%, length-normalized) runs against every
     rotation of the template; the best rotation also labels beat-in-bar. The estimate is
-    `exp(-d / 0.35)`, an uncalibrated prototype indicator.
+    `clip((0.63 − d) / (0.63 − 0.03), 0, 1)`: 1 = a clean textbook bar (d ≈ 0.03), 0 = no closer than smooth
+    random hand motion (median d ≈ 0.63, measured). It is a prototype indicator, not calibrated against expert ratings.
 
 ### Reference patterns
 

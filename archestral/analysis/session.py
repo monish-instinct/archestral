@@ -264,7 +264,7 @@ class SessionAnalyzer:
         t0, t1 = self._segment_beats[-(bpb + 1)].t, self._segment_beats[-1].t
         m = (tu >= t0) & (tu <= t1)
         res = gesture_similarity(xyu[m], self.pattern, self.cfg.dtw_points, self.cfg.dtw_band,
-                                 self.cfg.similarity_scale)
+                                 self.cfg.similarity_d_perfect, self.cfg.similarity_d_random)
         self._similarity = res
         if res.status == "ok" and res.estimate is not None:
             self.stats.similarity_values.append(res.estimate)

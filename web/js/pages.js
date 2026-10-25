@@ -16,7 +16,7 @@ const ANALYSIS_FIELDS = [
   ["min_bpm", "Min plausible BPM", 20, 120, 1],
   ["max_bpm", "Max plausible BPM", 60, 300, 1],
   ["tempo_window", "Tempo rolling window (beats)", 2, 64, 1],
-  ["similarity_scale", "Similarity scale (DTW d)", 0.01, 10, 0.01],
+  ["similarity_d_random", "Similarity: distance scored as 0", 0.05, 3, 0.01],
 ];
 
 export function renderSettings(settings, defaults, onSaved) {
@@ -149,7 +149,7 @@ export function renderResults(s, tempoHistory) {
         `rejected samples: ${s.rejected_samples}`)),
     el("div", { class: "panel" }, el("h3", {}, "Tempo during session"), canvas),
     el("div", { class: "panel" }, el("h3", {}, "How to read this"),
-      el("p", { class: "hint" }, "Tempo is the median of recent beat intervals (BPM = 60 / T). Timing error compares each beat with an even grid at the target tempo. Gesture similarity is a length-normalized DTW distance between your last bar and the schematic reference pattern, mapped to 0–1 with an uncalibrated constant. None of these alone measures conducting quality.")),
+      el("p", { class: "hint" }, "Tempo is the median of recent beat intervals (BPM = 60 / T). Timing error compares each beat with an even grid at the target tempo. Gesture similarity is a length-normalized DTW distance between your last bar and the schematic reference pattern, scaled so 1 matches the textbook pattern and 0 is no closer than random movement. None of these alone measures conducting quality.")),
   );
   requestAnimationFrame(() => drawHistory(canvas, s.tempo_history || [], s.target_bpm));
 }

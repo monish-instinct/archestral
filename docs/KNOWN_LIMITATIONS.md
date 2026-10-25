@@ -9,8 +9,11 @@
    second case ("move closer or conduct bigger").
 2. **Beat-reactive sound lags the gesture** by about 150–250 ms (detection lookahead + WebSocket +
    audio output). This is a reactive design, not predictive or sample-accurate synchronisation.
-3. **The gesture-similarity estimate is uncalibrated.** `exp(-d/0.35)` was chosen by hand; it is not
-   validated against expert ratings and is not a grade.
+3. **The gesture-similarity estimate is not validated.** It is anchored between a textbook bar (1) and
+   random hand motion (0), both measured on synthetic data, not against expert ratings, and it is not a grade.
+   In the first real webcam sessions (one person), bars scored about as far from the template as random
+   motion (d ≈ 0.6), so the template and/or the comparison window need real conductor data before this
+   number means much.
 4. **The reference patterns are schematic** cubic-Bézier drawings of textbook shapes, not motion
    capture of real conductors. Only 4/4 is the supported exercise; 3/4 and 2/4 are included as data.
 5. **The first ~2 s of each session are calibration**, and beats in that window are not reported.

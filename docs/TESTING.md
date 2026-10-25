@@ -12,7 +12,7 @@ for f in $(find web/js -name '*.js'); do node --check "$f"; done   # JS syntax c
 
 ## Results on the development machine (macOS 26.0.1, Apple M2, Python 3.12.4, Node 22.23)
 
-- `pytest`: **98 passed** (about 22 s)
+- `pytest`: **99 passed** (about 22 s)
 - `node --test`: **12 passed**
 - `node --check` on all client modules: no errors
 
@@ -45,6 +45,13 @@ presented as such.
   measured L/R levels changing with position (R>L by ~3 dB at x=+3; L>R by ~4 dB at x=−1.5).
 - A/B compare dialog with the measured difference table.
 - Settings and Diagnostics pages.
+
+## Real webcam recordings (dev Mac, one person, 25 Oct 2026)
+Three live sessions saved by the app (`data/recordings/`, not committed because they are personal data):
+camera ~23 fps, hand confidence ≈ 0.99, and detected beats aligned with the downward dips of the hand
+(≈ 88–92 BPM in sessions 1–2; session 3 contained very fast movement and read ≈ 158 BPM). Gesture
+similarity was low (≈ 0.07–0.1 on the anchored scale), because the bars were as far from the template as
+random motion. This led to re-anchoring the similarity scale (TD-7).
 
 ## Hardware tests still needed
 - Live webcam tracking after granting camera permission, in different lighting, with both hands, at different distances.

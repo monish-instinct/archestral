@@ -51,7 +51,10 @@ class AnalysisConfig:
     # --- similarity ---
     dtw_points: int = 64
     dtw_band: float = 0.25               # Sakoe-Chiba band as fraction of length
-    similarity_scale: float = 0.35       # d at which estimate = exp(-1) ~ 0.37 (uncalibrated)
+    # Similarity anchors (length-normalized DTW distance): a clean textbook bar scores ~0.03,
+    # smooth random hand motion ~0.63 (median, measured). estimate = 1 at d_perfect, 0 at d_random.
+    similarity_d_perfect: float = 0.03
+    similarity_d_random: float = 0.63
 
     # --- feedback ---
     target_bpm: float = 90.0
@@ -97,7 +100,8 @@ _BOUNDS: dict[str, tuple[float, float]] = {
     "tempo_refractory_ratio": (0.0, 0.9),
     "dtw_points": (8, 512),
     "dtw_band": (0.0, 1.0),
-    "similarity_scale": (0.01, 10.0),
+    "similarity_d_perfect": (0.0, 1.0),
+    "similarity_d_random": (0.05, 3.0),
     "target_bpm": (20.0, 300.0),
     "feedback_interval_s": (0.05, 2.0),
     "buffer_s": (3.0, 60.0),
@@ -125,6 +129,10 @@ def config_from_dict(data: dict[str, Any] | None, base: AnalysisConfig | None = 
             problems.append(f"'{key}'={value} outside [{lo}, {hi}]")
             continue
         setattr(cfg, key, int(value) if known[key].type in ("int", int) else float(value))
+    if cfg.similarity_d_perfect >= cfg.similarity_d_random:
+        problems.append("similarity_d_perfect must be below similarity_d_random; restored defaults")
+        cfg.similarity_d_perfect = AnalysisConfig.similarity_d_perfect
+        cfg.similarity_d_random = AnalysisConfig.similarity_d_random
     if cfg.min_bpm >= cfg.max_bpm:
         problems.append("min_bpm must be below max_bpm; restored defaults")
         cfg.min_bpm, cfg.max_bpm = AnalysisConfig.min_bpm, AnalysisConfig.max_bpm

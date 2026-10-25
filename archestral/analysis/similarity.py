@@ -7,17 +7,21 @@ Procedure:
      shape normalization (mean removed, divided by RMS radius);
   3. the bar may start on any beat, so DTW is run against every rotation of
      the template; the best rotation also yields a beat-in-bar labelling;
-  4. ``estimate = exp(-d / similarity_scale)`` with d the length-normalized
-     DTW distance.
+  4. the length-normalized DTW distance d is mapped linearly between two
+     measured anchors and clipped to [0, 1]:
+         estimate = (d_random - d) / (d_random - d_perfect)
+     d_perfect (~0.03) is a clean textbook bar; d_random (~0.63) is the median
+     distance of smooth random hand motion. So 0 means "no closer to the pattern
+     than random movement" and 1 means "matches the textbook shape".
 
-The estimate is a *prototype gesture-similarity indicator*. The scale is a
-hand-picked constant, not calibrated against human expert ratings, so it must
-not be read as an accuracy percentage or grade.
+The estimate is a *prototype gesture-similarity indicator*. The anchors are
+measured on synthetic data, not calibrated against human expert ratings, so it
+must not be read as an accuracy percentage or grade. Real conductors' patterns
+vary legitimately from the schematic template.
 """
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -36,7 +40,7 @@ class SimilarityResult:
 
 
 def gesture_similarity(user_xy: np.ndarray, pattern: ConductingPattern, n_points: int,
-                       band_fraction: float, scale: float) -> SimilarityResult:
+                       band_fraction: float, d_perfect: float = 0.03, d_random: float = 0.63) -> SimilarityResult:
     user_xy = np.asarray(user_xy, dtype=float)
     if user_xy.ndim != 2 or len(user_xy) < 8:
         return SimilarityResult("insufficient_data", None, None, None)
@@ -53,4 +57,5 @@ def gesture_similarity(user_xy: np.ndarray, pattern: ConductingPattern, n_points
     if best is None:
         return SimilarityResult("invalid", None, None, None)
     d, k = best
-    return SimilarityResult("ok", d, math.exp(-d / scale), k + 1)
+    estimate = min(1.0, max(0.0, (d_random - d) / (d_random - d_perfect)))
+    return SimilarityResult("ok", d, estimate, k + 1)

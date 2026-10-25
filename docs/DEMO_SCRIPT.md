@@ -24,6 +24,9 @@ Audio) and say that everything runs locally: no cloud, no GPU, no headset requir
 3. Show that tempo follows your speed, the chorale follows your beats, and bigger gestures play louder (the
    *p / mp / mf / f* marking next to the beat dots).
 4. Drop your hand out of view: the "Tracking lost" banner appears and the confidence bar falls.
+   Note on *Gesture similarity*: it compares your bar with the dashed textbook template
+   (1 = textbook shape, 0 = no closer than random movement). Free-form real conducting often scores low;
+   trace the dashed guide on the pad to show it rising, and say that it is a prototype, not a grade.
 5. **Stop** → the Results page: tempo over time, timing error, beats per position.
    *(No camera? Use **Mouse** input and draw the pattern in the pad.)*
 
@@ -45,5 +48,5 @@ Audio) and say that everything runs locally: no cloud, no GPU, no headset requir
 
 ## 5. Close (20 s)
 - Diagnostics page: live service/input/audio state and the event log.
-- Engineering: 98 Python + 12 JS automated tests, a versioned protocol, and validated persistence.
+- Engineering: 99 Python + 12 JS automated tests, a versioned protocol, and validated persistence.
 - Honest limitations: placeholder models, synthesized audio, an uncalibrated similarity estimate, and VR not tested on hardware.
