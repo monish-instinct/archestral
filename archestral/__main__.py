@@ -24,8 +24,16 @@ def cmd_serve(args) -> int:
 
     if args.host not in ("127.0.0.1", "localhost", "::1"):
         logging.warning("Binding to %s exposes the service beyond this machine.", args.host)
-    app = create_app(Path(args.data_dir) if args.data_dir else None)
+    import socket
+
     url = f"http://{'127.0.0.1' if args.host in ('0.0.0.0', '::') else args.host}:{args.port}/"
+    with socket.socket(socket.AF_INET6 if ":" in args.host else socket.AF_INET) as probe:
+        if probe.connect_ex((args.host if args.host != "0.0.0.0" else "127.0.0.1", args.port)) == 0:
+            print(f"\n  Port {args.port} is already in use (Archestral is probably still running in another\n"
+                  f"  terminal). Open {url} or stop that copy with Ctrl+C. To use another port:\n"
+                  f"  ./run.sh --port {args.port + 1}\n", file=sys.stderr)
+            return 1
+    app = create_app(Path(args.data_dir) if args.data_dir else None)
     print(f"\n  Archestral is running at {url}\n  Press Ctrl+C to stop.\n", flush=True)
     if not args.no_browser:
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()
