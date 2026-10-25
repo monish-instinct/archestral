@@ -342,8 +342,15 @@ class SessionAnalyzer:
         r = self.validator.report
         sims = self.stats.similarity_values
         bpb = self.pattern.beats_per_bar
+        # Whole-session tempo: same estimator over ALL beats (the live value only
+        # covers the last few beats, so it reflects how the session ended).
+        whole = estimate_tempo([b.t for b in self.beats], self.cfg.min_bpm, self.cfg.max_bpm,
+                               window=10 ** 6, min_intervals=self.cfg.min_intervals_for_tempo,
+                               beats_per_bar=bpb)
         return {
             **m,
+            "session_bpm": _round(whole.bpm, 2),
+            "session_tempo_deviation_pct": _round(tempo_deviation_percent(whole.bpm, self.cfg.target_bpm), 2),
             "similarity_mean": _round(float(np.mean(sims)) if sims else None, 3),
             "similarity_bars": len(sims),
             "suppressed_beats": self.stats.suppressed_beats,

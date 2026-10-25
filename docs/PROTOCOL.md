@@ -58,7 +58,7 @@ the active one are ignored.
 | `calibration` | calibration done | `normalization{center:[x,y], scale}` |
 | `beat` | per detected beat | `index`, `t` (source clock, s), `beat_in_bar` (1..B or null), `confidence` 0..1, `amplitude` (normalized vertical drop), `x`, `y` (normalized) |
 | `feedback` | 5 Hz while active | see below |
-| `summary` | on stop | feedback fields plus `similarity_mean`, `similarity_bars`, `mean_tracking_confidence`, `rejected{…}`, `beats[]`, `beats_per_position`, `tempo_history[[t,bpm]]` |
+| `summary` | on stop | feedback fields plus `session_bpm` and `session_tempo_deviation_pct` (whole session; `estimated_bpm` is the value at the end), `similarity_mean`, `similarity_bars`, `mean_tracking_confidence`, `rejected{…}`, `beats[]`, `beats_per_position`, `tempo_history[[t,bpm]]` |
 | `preview` | ≤ 12 Hz, opt-in | `jpeg` (base64, ≤ 320 px tall) |
 | `error` | on rejected input | `code`, `message` |
 

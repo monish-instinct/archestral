@@ -53,6 +53,8 @@ def test_rest_endpoints(tmp_path):
             assert (await r.json())["settings"]["target_bpm"] == 100
             assert (await c.delete("/api/arrangements/my-arr")).status == 200
             assert (await c.get("/")).status == 200
+            js = await c.get("/static/js/main.js")
+            assert js.status == 200 and js.headers["Cache-Control"] == "no-cache"
         finally:
             await c.close()
     asyncio.run(run())

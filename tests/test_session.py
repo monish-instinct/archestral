@@ -139,3 +139,16 @@ def test_feedback_events_are_rate_limited():
     n = sum(1 for i in range(600) for e in a.push(Sample(i / 60, 0.5 + 0.1 * (i % 9) / 9, 0.5))
             if e["type"] == "feedback")
     assert 45 <= n <= 51       # 10 s of samples -> ~50 feedback messages, not 600
+
+
+def test_session_tempo_covers_whole_session_not_just_the_end():
+    """Results must report the whole session, not the rolling value at the end."""
+    from archestral.analysis.patterns import ideal_trajectory
+    t1, xy1 = ideal_trajectory(P44, 90, 8, 60)
+    t2, xy2 = ideal_trajectory(P44, 150, 2, 60, t0=float(t1[-1]) + 1 / 60)
+    samples = [Sample(float(a), float(b), float(c)) for a, (b, c) in
+               list(zip(t1, xy1)) + list(zip(t2, xy2))]
+    s = analyze_samples(samples, AnalysisConfig(target_bpm=90), P44)
+    assert s["estimated_bpm"] > 120                         # rolling value follows the fast ending
+    assert s["session_bpm"] == pytest.approx(90, rel=0.12)  # the session as a whole was mostly 90
+    assert s["session_tempo_deviation_pct"] == pytest.approx((s["session_bpm"] - 90) / 90 * 100, abs=0.01)

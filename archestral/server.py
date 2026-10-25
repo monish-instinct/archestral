@@ -197,9 +197,9 @@ class ConductorService:
             return
         await self.emit_events(a.stop())
         m = a.summary()
-        log.info("session summary: source=%s duration=%.1fs beats=%d bpm=%s target=%s timing_err_ms=%s "
-                 "similarity=%s gaps=%d rejected=%d suppressed=%d", self._recording_source or "?",
-                 m["session_duration_s"], m["beat_count"], m["estimated_bpm"], m["target_bpm"],
+        log.info("session summary: source=%s duration=%.1fs beats=%d session_bpm=%s final_bpm=%s target=%s "
+                 "timing_err_ms=%s similarity=%s gaps=%d rejected=%d suppressed=%d", self._recording_source or "?",
+                 m["session_duration_s"], m["beat_count"], m["session_bpm"], m["estimated_bpm"], m["target_bpm"],
                  m["beat_timing_error_ms"], m["similarity_mean"], m["invalid_intervals"],
                  m["rejected_samples"], m["suppressed_beats"])
         rec, self._recording = self._recording, None
@@ -312,7 +312,7 @@ def save_recording(directory: Path, rows: list, source: str, analyzer: SessionAn
     doc = {"schema_version": 1, "synthetic": False, "recorded_live": True, "source": source,
            "name": f"Live {source} session {stamp}", "pattern": analyzer.pattern.id,
            "target_bpm": analyzer.cfg.target_bpm, "coordinate_space": "normalized, x right, y up",
-           "summary": {k: summary[k] for k in ("beat_count", "estimated_bpm", "similarity_mean",
+           "summary": {k: summary[k] for k in ("beat_count", "session_bpm", "estimated_bpm", "similarity_mean",
                                                 "invalid_intervals", "suppressed_beats")},
            "samples": rows}
     path.write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
@@ -342,7 +342,14 @@ def create_app(data_dir: Path | None = None) -> web.Application:
     store = ArrangementStore(data_dir / "arrangements", library)
     service = ConductorService(settings)
     service.recordings_dir = data_dir / "recordings"
-    app = web.Application(client_max_size=512 * 1024)
+    @web.middleware
+    async def no_cache(request, handler):
+        resp = await handler(request)
+        if request.path.startswith("/static/"):
+            resp.headers["Cache-Control"] = "no-cache"   # revalidate: never run stale client code
+        return resp
+
+    app = web.Application(client_max_size=512 * 1024, middlewares=[no_cache])
     app[SERVICE_KEY] = service
 
     async def on_startup(app):

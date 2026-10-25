@@ -12,7 +12,7 @@ for f in $(find web/js -name '*.js'); do node --check "$f"; done   # JS syntax c
 
 ## Results on the development machine (macOS 26.0.1, Apple M2, Python 3.12.4, Node 22.23)
 
-- `pytest`: **99 passed** (about 22 s)
+- `pytest`: **100 passed** (about 22 s)
 - `node --test`: **12 passed**
 - `node --check` on all client modules: no errors
 
@@ -52,6 +52,10 @@ camera ~23 fps, hand confidence ≈ 0.99, and detected beats aligned with the do
 (≈ 88–92 BPM in sessions 1–2; session 3 contained very fast movement and read ≈ 158 BPM). Gesture
 similarity was low (≈ 0.07–0.1 on the anchored scale), because the bars were as far from the template as
 random motion. This led to re-anchoring the similarity scale (TD-7).
+A second set of three sessions (21:13–21:17) was cross-checked against an independent dip count (scipy
+`find_peaks` on hand height, prominence 0.02): detected beats matched 11/11, 17/17 (+2 extra) and 19/20 dips.
+It also showed that the summary reported the rolling tempo at the *end* of a session (165 BPM for a session
+whose median beat period was 0.67 s), which led to the whole-session `session_bpm`.
 
 ## Hardware tests still needed
 - Live webcam tracking after granting camera permission, in different lighting, with both hands, at different distances.

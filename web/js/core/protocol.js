@@ -22,7 +22,7 @@ const VALIDATORS = {
     && isNumOrNull(m.tempo_deviation_pct) && typeof m.similarity === "object" && Number.isInteger(m.beat_count),
   session_state: (m) => typeof m.state === "string" && typeof m.message === "string",
   calibration: (m) => typeof m.normalization === "object",
-  summary: (m) => Number.isInteger(m.beat_count),
+  summary: (m) => Number.isInteger(m.beat_count) && isNumOrNull(m.session_bpm),
   preview: (m) => typeof m.jpeg === "string" && m.jpeg.length < MAX_MESSAGE_CHARS,
   error: (m) => typeof m.code === "string" && typeof m.message === "string",
   pong: () => true,

@@ -138,8 +138,8 @@ export function renderResults(s, tempoHistory) {
   const canvas = el("canvas", { id: "results-chart" });
   body.replaceChildren(
     el("div", { class: "results-cards" },
-      card("Estimated tempo", `${fmt(s.estimated_bpm, 1)} BPM`, `target ${fmt(s.target_bpm, 0)} BPM`),
-      card("Tempo deviation", `${signed(s.tempo_deviation_pct, 1)} %`, "(estimated − target) / target"),
+      card("Session tempo", `${fmt(s.session_bpm, 1)} BPM`, `target ${fmt(s.target_bpm, 0)} BPM · at the end: ${fmt(s.estimated_bpm, 0)} BPM`),
+      card("Tempo deviation", `${signed(s.session_tempo_deviation_pct, 1)} %`, "(session tempo − target) / target"),
       card("Beat timing error", `${fmt(s.beat_timing_error_ms, 0)} ms`, "mean |offset| from target grid"),
       card("Gesture similarity", sim === null ? "—" : sim.toFixed(2), `prototype estimate over ${s.similarity_bars} bar(s); not a grade`),
       card("Beats detected", String(s.beat_count), positions ? `per position: ${positions}` : ""),
@@ -149,7 +149,7 @@ export function renderResults(s, tempoHistory) {
         `rejected samples: ${s.rejected_samples}`)),
     el("div", { class: "panel" }, el("h3", {}, "Tempo during session"), canvas),
     el("div", { class: "panel" }, el("h3", {}, "How to read this"),
-      el("p", { class: "hint" }, "Tempo is the median of recent beat intervals (BPM = 60 / T). Timing error compares each beat with an even grid at the target tempo. Gesture similarity is a length-normalized DTW distance between your last bar and the schematic reference pattern, scaled so 1 matches the textbook pattern and 0 is no closer than random movement. None of these alone measures conducting quality.")),
+      el("p", { class: "hint" }, "Session tempo uses every beat of the session (BPM = 60 / T, T = median beat period); the live dashboard shows the last few beats. Timing error compares each beat with an even grid at the target tempo. Gesture similarity is a length-normalized DTW distance between your last bar and the schematic reference pattern, scaled so 1 matches the textbook pattern and 0 is no closer than random movement. None of these alone measures conducting quality.")),
   );
   requestAnimationFrame(() => drawHistory(canvas, s.tempo_history || [], s.target_bpm));
 }
