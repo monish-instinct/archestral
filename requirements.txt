@@ -1,0 +1,6 @@
+# Core analysis + local web service
+numpy==1.26.4
+aiohttp>=3.9,<4
+# Webcam tracking (optional at runtime; the app still launches without them)
+mediapipe==0.10.21
+opencv-contrib-python==4.11.0.86

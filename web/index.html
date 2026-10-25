@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Archestral</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23d8a24a'/%3E%3Cpath d='M9 22 L16 8 L23 22' stroke='%23111' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script type="importmap">
+    { "imports": { "three": "/static/vendor/three/three.module.min.js",
+                   "three/addons/": "/static/vendor/three/addons/" } }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/menu" aria-label="Archestral home">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">Archestral</span>
+      <span class="brand-sub">Adaptive Orchestral Sandbox</span>
+    </a>
+    <nav class="tabs" aria-label="Main">
+      <a href="#/menu" data-route="menu">Home</a>
+      <a href="#/conductor" data-route="conductor">Conductor</a>
+      <a href="#/composer" data-route="composer">Composer</a>
+      <a href="#/settings" data-route="settings">Settings</a>
+      <a href="#/diagnostics" data-route="diagnostics">Diagnostics</a>
+    </nav>
+    <div class="chips" aria-live="polite">
+      <span class="chip" id="chip-service" title="Local analysis service"><i></i>Service</span>
+      <span class="chip" id="chip-input" title="Conducting input"><i></i>Input</span>
+      <span class="chip" id="chip-audio" title="Audio engine"><i></i>Audio</span>
+    </div>
+  </header>
+
+  <main id="app">
+    <!-- ============================================================ MENU -->
+    <section class="screen" id="screen-menu" data-screen="menu">
+      <div class="menu">
+        <div class="menu-intro">
+          <p class="eyebrow">Embodied conducting &amp; spatial orchestration learning</p>
+          <h1>Learn how gesture, timing and placement shape an orchestra.</h1>
+          <p class="lead">Conduct a virtual ensemble with your hand in front of the webcam and get live feedback on
+            beat, tempo and pattern shape. Then arrange instruments on a 3D stage and hear how position changes
+            what reaches the listener.</p>
+        </div>
+        <div class="mode-cards">
+          <a class="mode-card" href="#/conductor">
+            <span class="mode-tag">Mode A</span>
+            <h2>Conductor</h2>
+            <p>Conduct a 4/4 pattern. Beat detection, tempo estimation and DTW pattern comparison run locally.</p>
+            <ul><li>Webcam (MediaPipe Hands)</li><li>Mouse / trackpad pad</li><li>Recorded test trajectories</li><li>WebXR controller (headset required)</li></ul>
+            <span class="mode-go">Open Conductor &rarr;</span>
+          </a>
+          <a class="mode-card" href="#/composer">
+            <span class="mode-tag">Mode B</span>
+            <h2>Composer</h2>
+            <p>Place, move and rotate instruments on a 3D stage, mix them, and listen through HRTF spatial audio.</p>
+            <ul><li>Volume, mute, solo, articulation</li><li>Listener at podium or in the audience</li><li>Save, load and A/B compare arrangements</li></ul>
+            <span class="mode-go">Open Composer &rarr;</span>
+          </a>
+        </div>
+        <div class="panel menu-status">
+          <h3>System status</h3>
+          <dl id="menu-status" class="kv"></dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ CONDUCTOR -->
+    <section class="screen" id="screen-conductor" data-screen="conductor" hidden>
+      <div class="conductor">
+        <aside class="panel col-left">
+          <h3>Session</h3>
+          <label class="field-label">Input</label>
+          <div class="seg" id="input-seg" role="radiogroup" aria-label="Conducting input">
+            <button data-input="webcam" role="radio">Webcam</button>
+            <button data-input="mouse" role="radio">Mouse</button>
+            <button data-input="recorded" role="radio">Test data</button>
+            <button data-input="webxr" role="radio">VR</button>
+          </div>
+          <div class="input-extra" data-for="webcam">
+            <label class="field-label" for="camera-index">Camera</label>
+            <select id="camera-index">
+              <option value="0">Camera 0 (built-in)</option><option value="1">Camera 1</option>
+              <option value="2">Camera 2</option><option value="3">Camera 3</option>
+            </select>
+            <label class="check"><input type="checkbox" id="show-preview"> Show camera preview</label>
+          </div>
+          <div class="input-extra" data-for="recorded">
+            <label class="field-label" for="fixture-select">Recorded test trajectory</label>
+            <select id="fixture-select"></select>
+            <p class="hint warn-text">Synthetic test input &mdash; not live tracking.</p>
+          </div>
+          <div class="input-extra" data-for="mouse">
+            <p class="hint">Press and drag inside the conducting pad. Draw the 4/4 pattern: down, left, right, up.</p>
+          </div>
+          <div class="input-extra" data-for="webxr">
+            <p class="hint" id="xr-hint">Checking WebXR support&hellip;</p>
+            <button class="btn" id="xr-enter" disabled>Enter VR conducting</button>
+          </div>
+
+          <div class="row2">
+            <div>
+              <label class="field-label" for="pattern-select">Pattern</label>
+              <select id="pattern-select"></select>
+            </div>
+            <div>
+              <label class="field-label" for="target-bpm">Target BPM</label>
+              <div class="stepper">
+                <button data-step="-2" aria-label="Decrease target tempo">&minus;</button>
+                <input id="target-bpm" type="number" min="20" max="300" step="1" value="90">
+                <button data-step="2" aria-label="Increase target tempo">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button class="btn primary" id="btn-start">Start</button>
+            <button class="btn" id="btn-pause" disabled>Pause</button>
+            <button class="btn" id="btn-stop" disabled>Stop</button>
+            <button class="btn ghost" id="btn-calibrate" disabled title="Measure your movement range again">Recalibrate</button>
+          </div>
+          <div id="cond-banners" class="banners" aria-live="polite"></div>
+
+          <h3 class="mt">Audio response</h3>
+          <label class="check"><input type="checkbox" id="opt-orchestra" checked> Orchestra plays on each detected beat</label>
+          <label class="check"><input type="checkbox" id="opt-click" checked> Click on each detected beat</label>
+          <label class="check"><input type="checkbox" id="opt-reference"> Reference metronome at target tempo</label>
+          <p class="hint">Beat-triggered sound is <em>reactive</em>: it starts when a beat is detected, about
+            150&ndash;250&nbsp;ms after the ictus. The reference metronome is scheduled sample-accurately on the
+            audio clock but is not synchronised to your gesture.</p>
+        </aside>
+
+        <div class="col-center">
+          <div class="pad-wrap panel" id="pad-wrap">
+            <canvas id="pad" aria-label="Conducting trajectory"></canvas>
+            <img id="preview" alt="Camera preview with hand landmarks" hidden>
+            <div class="pad-overlay" id="pad-overlay"></div>
+            <div class="beat-dots" id="beat-dots" aria-label="Beat in bar"></div>
+          </div>
+          <div class="panel chart-panel">
+            <div class="panel-head"><h3>Tempo</h3><span class="legend"><i class="lg-est"></i>Estimated <i class="lg-target"></i>Target</span></div>
+            <canvas id="tempo-chart" aria-label="Tempo over time"></canvas>
+          </div>
+        </div>
+
+        <aside class="panel col-right">
+          <h3>Feedback</h3>
+          <div class="metric big"><span class="m-label">Estimated tempo</span><span class="m-value" id="m-bpm">&mdash;</span><span class="m-unit">BPM</span></div>
+          <div class="metric-grid">
+            <div class="metric"><span class="m-label">Target</span><span class="m-value" id="m-target">&mdash;</span><span class="m-unit">BPM</span></div>
+            <div class="metric"><span class="m-label">Tempo deviation</span><span class="m-value" id="m-dev">&mdash;</span><span class="m-unit">%</span></div>
+            <div class="metric"><span class="m-label">Beat timing error</span><span class="m-value" id="m-timing">&mdash;</span><span class="m-unit">ms</span></div>
+            <div class="metric"><span class="m-label">Beats detected</span><span class="m-value" id="m-beats">0</span></div>
+            <div class="metric"><span class="m-label">Session time</span><span class="m-value" id="m-duration">0:00</span></div>
+            <div class="metric"><span class="m-label">Tracking gaps</span><span class="m-value" id="m-gaps">0</span></div>
+          </div>
+          <div class="metric sim">
+            <span class="m-label">Gesture similarity <span class="badge" title="Length-normalized DTW distance to the reference pattern, mapped with exp(-d/0.35). Not calibrated against expert ratings; not a grade.">prototype</span></span>
+            <div class="bar"><div class="bar-fill" id="m-sim-bar"></div></div>
+            <span class="m-sub" id="m-sim">&mdash;</span>
+          </div>
+          <div class="metric">
+            <span class="m-label">Tracking confidence</span>
+            <div class="bar"><div class="bar-fill alt" id="m-conf-bar"></div></div>
+            <span class="m-sub" id="m-conf">&mdash;</span>
+          </div>
+          <p class="hint">Tempo alone does not determine conducting quality. Use these numbers as practice
+            feedback, not a score.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================================================ RESULTS -->
+    <section class="screen" id="screen-results" data-screen="results" hidden>
+      <div class="results">
+        <div class="panel-head"><h2>Session results</h2>
+          <div><a class="btn" href="#/conductor">Back to Conductor</a></div></div>
+        <div id="results-body" class="results-body"><p class="hint">No session finished yet.</p></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ COMPOSER -->
+    <section class="screen" id="screen-composer" data-screen="composer" hidden>
+      <div class="composer">
+        <div id="stage-host" class="stage-host" tabindex="0" aria-label="3D stage. Click an instrument to select it; arrow keys move, Q and E rotate."></div>
+
+        <aside class="panel float left" id="composer-left">
+          <div class="panel-head"><h3>Arrangement</h3><span class="dirty" id="arr-dirty" hidden>Unsaved</span></div>
+          <div class="arr-name" id="arr-name">&mdash;</div>
+          <div class="btn-row">
+            <button class="btn sm primary" id="arr-save">Save</button>
+            <button class="btn sm" id="arr-new">New</button>
+            <button class="btn sm" id="arr-rename">Rename</button>
+            <button class="btn sm" id="arr-dup">Duplicate</button>
+            <button class="btn sm danger" id="arr-delete">Delete</button>
+          </div>
+          <label class="field-label" for="arr-list">Saved arrangements</label>
+          <select id="arr-list" size="5" class="list"></select>
+          <div class="btn-row"><button class="btn sm" id="arr-load">Load selected</button>
+            <button class="btn sm" id="arr-compare">A/B compare</button></div>
+
+          <h3 class="mt">Add instrument</h3>
+          <div id="lib-list" class="lib-list"></div>
+          <p class="hint">Models are placeholders; audio is synthesized test audio, not recorded instruments.</p>
+        </aside>
+
+        <aside class="panel float right" id="inspector">
+          <h3>Instrument</h3>
+          <div id="inspector-empty" class="hint">Select an instrument on the stage.</div>
+          <div id="inspector-body" hidden>
+            <div class="insp-title"><span id="insp-swatch" class="swatch"></span><strong id="insp-name"></strong><span class="badge">placeholder</span></div>
+            <div class="kv small" id="insp-pos"></div>
+            <label class="field-label">Volume <span id="insp-gain-val" class="muted"></span></label>
+            <input type="range" id="insp-gain" min="0" max="1.5" step="0.01">
+            <div class="btn-row">
+              <button class="btn sm toggle" id="insp-mute" aria-pressed="false">Mute</button>
+              <button class="btn sm toggle" id="insp-solo" aria-pressed="false">Solo</button>
+            </div>
+            <label class="field-label">Articulation</label>
+            <div id="insp-arts" class="chips-row"></div>
+            <p class="hint" id="insp-art-note"></p>
+            <label class="field-label">Rotation <span id="insp-rot-val" class="muted"></span></label>
+            <input type="range" id="insp-rot" min="-180" max="180" step="5">
+            <label class="field-label">Scale <span id="insp-scale-val" class="muted"></span></label>
+            <input type="range" id="insp-scale" min="0.5" max="1.6" step="0.05">
+            <div class="btn-row">
+              <button class="btn sm" id="insp-preview">Play note</button>
+              <button class="btn sm" id="insp-reset">Reset to defaults</button>
+              <button class="btn sm danger" id="insp-delete">Remove</button>
+            </div>
+            <p class="hint">Drag on the stage to move. Arrows move (Shift = fine), Q/E rotate, Delete removes.</p>
+          </div>
+        </aside>
+
+        <div class="panel float bottom transport">
+          <button class="btn primary" id="tr-play">Play</button>
+          <label>Tempo <input type="number" id="tr-tempo" min="30" max="200" value="72"></label>
+          <label>Listen from
+            <select id="tr-listener"><option value="podium">Podium (conductor)</option><option value="audience">Audience</option><option value="camera">Camera view</option></select></label>
+          <label>Reverb <input type="range" id="tr-reverb" min="0" max="1" step="0.01"></label>
+          <label>Master <input type="range" id="tr-master" min="0" max="1.5" step="0.01"></label>
+          <label class="check"><input type="checkbox" id="tr-snap" checked> Snap</label>
+          <label class="check"><input type="checkbox" id="tr-hrtf" checked> HRTF</label>
+          <button class="btn sm ghost" id="tr-diag" aria-pressed="false">Audio diagnostics</button>
+        </div>
+
+        <div class="panel float diag" id="audio-diag" hidden>
+          <h3>Audio diagnostics</h3>
+          <dl class="kv small" id="diag-kv"></dl>
+          <div class="meters"><span>L</span><div class="meter"><div id="meter-l"></div></div><span id="meter-l-db" class="muted"></span></div>
+          <div class="meters"><span>R</span><div class="meter"><div id="meter-r"></div></div><span id="meter-r-db" class="muted"></span></div>
+          <p class="hint">Levels are measured from the actual output mix. Move an instrument left or right and
+            watch the L/R balance change.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SETTINGS -->
+    <section class="screen" id="screen-settings" data-screen="settings" hidden>
+      <form class="settings" id="settings-form">
+        <div class="panel-head"><h2>Settings</h2>
+          <div class="btn-row"><button type="button" class="btn" id="set-defaults">Restore defaults</button>
+            <button type="submit" class="btn primary">Save settings</button></div></div>
+        <div id="settings-problems" class="banners"></div>
+        <div class="settings-grid" id="settings-grid"></div>
+      </form>
+    </section>
+
+    <!-- ============================================================ DIAGNOSTICS -->
+    <section class="screen" id="screen-diagnostics" data-screen="diagnostics" hidden>
+      <div class="diagnostics">
+        <h2>Diagnostics</h2>
+        <div class="diag-grid">
+          <div class="panel"><h3>Service</h3><dl class="kv" id="dg-service"></dl></div>
+          <div class="panel"><h3>Input &amp; analysis</h3><dl class="kv" id="dg-input"></dl></div>
+          <div class="panel"><h3>Audio &amp; XR</h3><dl class="kv" id="dg-audio"></dl></div>
+          <div class="panel wide"><h3>Recent events</h3><ol class="log" id="dg-log"></ol></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toasts" class="toasts" aria-live="assertive"></div>
+  <dialog id="modal" class="modal"><form method="dialog" id="modal-form">
+    <h3 id="modal-title"></h3><div id="modal-body"></div>
+    <div class="btn-row end"><button value="cancel" class="btn" id="modal-cancel">Cancel</button>
+      <button value="ok" class="btn primary" id="modal-ok">OK</button></div>
+  </form></dialog>
+
+  <script type="module" src="/static/js/main.js"></script>
+</body>
+</html>

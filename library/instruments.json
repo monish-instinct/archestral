@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "note": "Models are procedural PLACEHOLDER geometry and audio is SYNTHESIZED TEST AUDIO. Replace 'model' and 'audio.sample' to use real assets; no instrument logic needs to change.",
+  "stage": {
+    "half_width": 7.0,
+    "depth_front": 3.0,
+    "depth_back": 6.5,
+    "podium": [0.0, 0.0, 4.2],
+    "audience": [0.0, 1.2, 11.0],
+    "min_spacing": 0.9,
+    "grid": 0.5
+  },
+  "instruments": [
+    {
+      "id": "violin",
+      "name": "Violin",
+      "family": "strings",
+      "section": "Violins",
+      "model": "placeholder:violin",
+      "color": "#c98b4f",
+      "default_position": [-3.0, 0.0, 0.8],
+      "default_rotation_y_deg": 20,
+      "default_scale": 1.0,
+      "default_gain": 0.8,
+      "default_articulation": "arco",
+      "articulations": [
+        {"id": "arco", "label": "Arco (bowed)", "supported": true},
+        {"id": "staccato", "label": "Staccato", "supported": true},
+        {"id": "pizzicato", "label": "Pizzicato", "supported": true},
+        {"id": "tremolo", "label": "Tremolo", "supported": true},
+        {"id": "col_legno", "label": "Col legno", "supported": false, "reason": "No synthesis model or sample for col legno yet."}
+      ],
+      "audio": {"voice": "bowed_string", "part": "melody", "octave": 0, "sample": null},
+      "spatial": {"ref_distance": 1.5, "max_distance": 40, "rolloff": 1.0, "cone_inner_deg": 360, "cone_outer_deg": 360, "cone_outer_gain": 1.0}
+    },
+    {
+      "id": "cello",
+      "name": "Cello",
+      "family": "strings",
+      "section": "Cellos",
+      "model": "placeholder:cello",
+      "color": "#9a5b34",
+      "default_position": [2.8, 0.0, 0.8],
+      "default_rotation_y_deg": -20,
+      "default_scale": 1.0,
+      "default_gain": 0.85,
+      "default_articulation": "arco",
+      "articulations": [
+        {"id": "arco", "label": "Arco (bowed)", "supported": true},
+        {"id": "staccato", "label": "Staccato", "supported": true},
+        {"id": "pizzicato", "label": "Pizzicato", "supported": true},
+        {"id": "tremolo", "label": "Tremolo", "supported": false, "reason": "Tremolo is only modelled for the violin voice so far."}
+      ],
+      "audio": {"voice": "bowed_string", "part": "bass", "octave": -1, "sample": null},
+      "spatial": {"ref_distance": 1.5, "max_distance": 40, "rolloff": 1.0, "cone_inner_deg": 360, "cone_outer_deg": 360, "cone_outer_gain": 1.0}
+    },
+    {
+      "id": "flute",
+      "name": "Flute",
+      "family": "woodwinds",
+      "section": "Woodwinds",
+      "model": "placeholder:flute",
+      "color": "#c7ccd6",
+      "default_position": [-1.2, 0.0, -2.5],
+      "default_rotation_y_deg": 0,
+      "default_scale": 1.0,
+      "default_gain": 0.7,
+      "default_articulation": "legato",
+      "articulations": [
+        {"id": "legato", "label": "Legato", "supported": true},
+        {"id": "staccato", "label": "Staccato", "supported": true},
+        {"id": "flutter", "label": "Flutter-tongue", "supported": false, "reason": "Flutter-tongue noise model not implemented."}
+      ],
+      "audio": {"voice": "flute", "part": "descant", "octave": 1, "sample": null},
+      "spatial": {"ref_distance": 1.2, "max_distance": 40, "rolloff": 1.1, "cone_inner_deg": 360, "cone_outer_deg": 360, "cone_outer_gain": 1.0}
+    },
+    {
+      "id": "horn",
+      "name": "French Horn",
+      "family": "brass",
+      "section": "Brass",
+      "model": "placeholder:horn",
+      "color": "#d9b44a",
+      "default_position": [2.4, 0.0, -3.2],
+      "default_rotation_y_deg": 0,
+      "default_scale": 1.0,
+      "default_gain": 0.65,
+      "default_articulation": "legato",
+      "articulations": [
+        {"id": "legato", "label": "Legato", "supported": true},
+        {"id": "staccato", "label": "Staccato", "supported": true},
+        {"id": "stopped", "label": "Stopped", "supported": false, "reason": "Stopped-horn timbre not implemented."}
+      ],
+      "audio": {"voice": "brass", "part": "tenor", "octave": 0, "sample": null},
+      "spatial": {"ref_distance": 1.8, "max_distance": 45, "rolloff": 1.0, "cone_inner_deg": 100, "cone_outer_deg": 260, "cone_outer_gain": 0.35}
+    },
+    {
+      "id": "timpani",
+      "name": "Timpani",
+      "family": "percussion",
+      "section": "Percussion",
+      "model": "placeholder:timpani",
+      "color": "#7d8796",
+      "default_position": [0.0, 0.0, -5.2],
+      "default_rotation_y_deg": 0,
+      "default_scale": 1.0,
+      "default_gain": 0.75,
+      "default_articulation": "single",
+      "articulations": [
+        {"id": "single", "label": "Single strokes", "supported": true},
+        {"id": "roll", "label": "Roll", "supported": true}
+      ],
+      "audio": {"voice": "timpani", "part": "timpani", "octave": -1, "sample": null},
+      "spatial": {"ref_distance": 2.0, "max_distance": 50, "rolloff": 0.9, "cone_inner_deg": 360, "cone_outer_deg": 360, "cone_outer_gain": 1.0}
+    }
+  ]
+}
