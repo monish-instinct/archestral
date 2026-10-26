@@ -12,7 +12,7 @@ for f in $(find web/js -name '*.js'); do node --check "$f"; done   # JS syntax c
 
 ## Results on the development machine (macOS 26.0.1, Apple M2, Python 3.12.4, Node 22.23)
 
-- `pytest`: **100 passed** (about 22 s)
+- `pytest`: **101 passed** (about 22 s)
 - `node --test`: **12 passed**
 - `node --check` on all client modules: no errors
 

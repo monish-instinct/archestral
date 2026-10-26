@@ -41,7 +41,7 @@ the active one are ignored.
 |---|---|
 | `set_source` | `source` ∈ webcam, mouse, webxr, recorded, none; `camera` 0..9 (webcam); `fixture` name (recorded) |
 | `start`, `pause`, `resume`, `stop`, `calibrate` | none |
-| `set_target_bpm` | `bpm` 20..300 |
+| `set_target_bpm` | `bpm` 40..200 |
 | `set_pattern` | `pattern` id (e.g. `4-4`) |
 | `set_preview` | `enabled` bool (webcam JPEG preview for this client) |
 

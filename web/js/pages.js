@@ -38,7 +38,7 @@ export function renderSettings(settings, defaults, onSaved) {
       ...sel("s-landmark", "Tracked hand point", settings.tracked_landmark, [["wrist", "Wrist"], ["index_tip", "Index fingertip"]]),
       chk("s-mirror", "Mirror camera image (selfie view)", settings.mirror_camera),
       chk("s-preview", "Show camera preview by default", settings.ui.show_preview),
-      ...num("s-bpm", "Default target tempo (BPM)", settings.target_bpm, 20, 300, 1),
+      ...num("s-bpm", "Default target tempo (BPM)", settings.target_bpm, 40, 200, 1),
       chk("s-record", "Save live sessions for tuning (wrist points only, kept locally)", settings.record_sessions),
       el("p", { class: "hint" }, "Recordings go to data/recordings (newest 30 kept). No images are stored.")),
     el("div", { class: "panel" }, el("h3", {}, "Analysis"),

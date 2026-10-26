@@ -11,6 +11,10 @@ from dataclasses import asdict, dataclass, fields
 from typing import Any
 
 
+# Realistic conducting tempi. One shared range for settings, protocol and the analyzer.
+TARGET_BPM_RANGE = (40.0, 200.0)
+
+
 @dataclass
 class AnalysisConfig:
     # --- sample validation ---
@@ -102,7 +106,7 @@ _BOUNDS: dict[str, tuple[float, float]] = {
     "dtw_band": (0.0, 1.0),
     "similarity_d_perfect": (0.0, 1.0),
     "similarity_d_random": (0.05, 3.0),
-    "target_bpm": (20.0, 300.0),
+    "target_bpm": TARGET_BPM_RANGE,
     "feedback_interval_s": (0.05, 2.0),
     "buffer_s": (3.0, 60.0),
 }

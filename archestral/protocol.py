@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from . import PROTOCOL_VERSION
+from .analysis.config import TARGET_BPM_RANGE
 
 MAX_MESSAGE_BYTES = 64 * 1024
 MAX_POINTS_PER_MESSAGE = 256
@@ -138,8 +139,9 @@ def _command(msg: dict[str, Any]) -> dict[str, Any]:
             out["fixture"] = fx
     elif name == "set_target_bpm":
         bpm = args.get("bpm")
-        if not _finite(bpm) or not (20 <= bpm <= 300):
-            raise ProtocolError("bad_args", "bpm must be within 20..300")
+        lo, hi = TARGET_BPM_RANGE
+        if not _finite(bpm) or not (lo <= bpm <= hi):
+            raise ProtocolError("bad_args", f"bpm must be within {lo:g}..{hi:g}")
         out["bpm"] = float(bpm)
     elif name == "set_pattern":
         pid = args.get("pattern")

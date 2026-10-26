@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .analysis.config import config_from_dict
+from .analysis.config import TARGET_BPM_RANGE, config_from_dict
 
 log = logging.getLogger("archestral.storage")
 
@@ -296,7 +296,8 @@ def validate_settings(data: Any) -> tuple[dict[str, Any], list[str]]:
     pick("mirror_camera", lambda v: isinstance(v, bool))
     pick("tracked_landmark", lambda v: v in ("wrist", "index_tip"))
     pick("pattern", lambda v: isinstance(v, str) and len(v) <= 32)
-    pick("target_bpm", lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and 20 <= v <= 300)
+    pick("target_bpm", lambda v: isinstance(v, (int, float)) and not isinstance(v, bool)
+         and TARGET_BPM_RANGE[0] <= v <= TARGET_BPM_RANGE[1])
     pick("log_level", lambda v: v in ("DEBUG", "INFO", "WARNING", "ERROR"))
     pick("record_sessions", lambda v: isinstance(v, bool))
     if "analysis" in data:

@@ -48,5 +48,5 @@ Audio) and say that everything runs locally: no cloud, no GPU, no headset requir
 
 ## 5. Close (20 s)
 - Diagnostics page: live service/input/audio state and the event log.
-- Engineering: 100 Python + 12 JS automated tests, a versioned protocol, and validated persistence.
+- Engineering: 101 Python + 12 JS automated tests, a versioned protocol, and validated persistence.
 - Honest limitations: placeholder models, synthesized audio, an uncalibrated similarity estimate, and VR not tested on hardware.

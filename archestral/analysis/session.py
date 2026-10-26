@@ -17,7 +17,7 @@ from typing import Any
 import numpy as np
 
 from .beats import detect_beats
-from .config import AnalysisConfig
+from .config import TARGET_BPM_RANGE, AnalysisConfig
 from .patterns import ConductingPattern
 from .preprocessing import Normalization, OneEuroFilter, SampleValidator, compute_normalization, resample_uniform
 from .similarity import gesture_similarity
@@ -126,7 +126,7 @@ class SessionAnalyzer:
         return [self._state_event("Session stopped."), {"type": "summary", **self.summary()}]
 
     def set_target_bpm(self, bpm: float) -> None:
-        if math.isfinite(bpm) and 20 <= bpm <= 300:
+        if math.isfinite(bpm) and TARGET_BPM_RANGE[0] <= bpm <= TARGET_BPM_RANGE[1]:
             self.cfg.target_bpm = float(bpm)
 
     def set_pattern(self, pattern: ConductingPattern) -> None:

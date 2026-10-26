@@ -146,6 +146,12 @@ def test_invalid_files_fail_safely(tmp_path):
 
 
 # ----------------------------------------------------------------- settings
+def test_saved_20_bpm_target_is_reset(tmp_path):
+    """An earlier UI bug saved 20 BPM; values outside 40..200 fall back to the default."""
+    s, problems = validate_settings({"target_bpm": 20.0})
+    assert s["target_bpm"] == 90 and problems
+
+
 def test_settings_defaults_and_validation(tmp_path):
     s, problems = validate_settings({"target_bpm": 500, "camera_index": 2, "audio": {"reverb_mix": 3},
                                      "analysis": {"dip_ratio": 0.4, "bogus": 1}})

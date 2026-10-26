@@ -78,7 +78,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/PROTOCOL.md](docs/PRO
 node --test web/tests/*.test.mjs
 ```
 
-There are 100 Python tests (preprocessing, beats, tempo, DTW, patterns, the streaming session,
+There are 101 Python tests (preprocessing, beats, tempo, DTW, patterns, the streaming session,
 protocol, storage, and end-to-end HTTP/WebSocket) and 12 JavaScript tests (protocol parsing,
 mixer, stage rules, A/B comparison). See [docs/TESTING.md](docs/TESTING.md).
 

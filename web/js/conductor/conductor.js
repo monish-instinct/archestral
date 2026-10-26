@@ -94,9 +94,9 @@ export class ConductorMode {
       const n = Math.round(Number(v));
       // Empty or out-of-range input is rejected (not clamped) so a half-typed value
       // never silently becomes 20 or 300 BPM.
-      if (String(v).trim() === "" || !Number.isFinite(n) || n < 20 || n > 300) {
+      if (String(v).trim() === "" || !Number.isFinite(n) || n < 40 || n > 200) {
         bpm.value = this.settings.target_bpm;
-        toast("Target tempo must be between 20 and 300 BPM.", "warn");
+        toast("Target tempo must be between 40 and 200 BPM.", "warn");
         return;
       }
       bpm.value = n;
